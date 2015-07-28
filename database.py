@@ -1,9 +1,11 @@
 #!/usr/bin/python
 from __future__ import print_function
 from datetime import datetime
+from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import base64
 import os
+from pprint import pprint
 import requests
 
 from peewee import *
@@ -64,6 +66,7 @@ class Tracksinplaylist(BaseModel):
         db_table = 'TracksInPlaylist'
         primary_key = CompositeKey('dateAdded', 'playlistNumber', 'trackId')
 
+
 def _refresh_access_token(refresh_token):
     payload = {"refresh_token": refresh_token,
                "grant_type": "refresh_token"}
@@ -80,40 +83,34 @@ def _refresh_access_token(refresh_token):
         token_info["refresh_token"] = refresh_token
     return token_info
 
+
 def getAccessToken(id=LOCAL_USER):
     response = Oauth.get(Oauth.id == id)
     now = datetime.now() + relativedelta(minutes=10)
-    # td.timedelta(minutes=10)
-    print ("now: " + str(now))
+    print("now: " + str(now))
     expires = response.expires;
-    print ("expires " + str(expires))
+    print("expires " + str(expires))
     if now > expires:
         token_info = _refresh_access_token(response.refreshToken)
-        print(token_info)
         response.accessToken = token_info['access_token']
         response.expires = datetime.now() + relativedelta(seconds=token_info['expires_in'])
-        response.save()
+        response.save()  # Saves to the database
     return response.accessToken
+
 
 def getRefreshToken(id=LOCAL_USER):
     return Oauth.get(Oauth.id == id).refreshToken
 
 
 def getPlaylistsUpdatedOlderThan(days):
-    return Playlist.select().where(Playlist.lastUpdated.between(datetime.date.min,
-                                                                datetime.date.today() - datetime.timedelta(days=days)))
+    return Playlist.select().where(Playlist.lastUpdated.between(datetime(year=2000,month=1,day=1),
+                                                                datetime.today() - relativedelta(days=days)))
 
 
 def getPlaylist(playlistId):
     return Playlist.get(Playlist.playlistId == playlistId)
 
-# print "info about 7zWUZbseTIPylea5lPVtcM"
-# pprint(vars(getPlaylist("7zWUZbseTIPylea5lPVtcM")))
-#
-# print "Playlist with id=1"
-# query = Playlist.select().where(Playlist.number == 1)
-# for playlist in query:
-#     print playlist.playlistId
 
-# nbr = Playlist.get(Playlist.number == 1)
-# print nbr
+# ans = getPlaylistsUpdatedOlderThan(100)
+# for playlist in ans:
+#     pprint(vars(playlist))
