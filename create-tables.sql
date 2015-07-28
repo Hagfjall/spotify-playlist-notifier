@@ -41,3 +41,12 @@ CREATE TABLE TracksInPlaylist(
 )ENGINE=InnoDB;
 # Test to add a Track to a playlist
 INSERT INTO TracksInPlaylist(trackId,playlistNumber,dateAdded) VALUES ('6TJmQnO44YE5BtTxH8pop1',1,'2012-01-19 03:14:07');
+
+CREATE TABLE spotifyCrawler.OAuth
+(
+    id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    accessToken VARCHAR(100) NOT NULL,
+    refreshToken VARCHAR(100) NOT NULL,
+    expires DATETIME NOT NULL
+);
+
