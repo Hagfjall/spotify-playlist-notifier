@@ -1,11 +1,9 @@
 #!/usr/bin/python
 from __future__ import print_function
 from datetime import datetime
-from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import base64
 import os
-from pprint import pprint
 import requests
 
 from peewee import *
@@ -40,6 +38,7 @@ class Playlist(BaseModel):
     lastUpdated = DateTimeField(db_column='lastUpdated', null=True)
     number = PrimaryKeyField()
     playlistId = CharField(db_column='playlistId')
+    snapshotId = CharField(db_column='snapshotId', null=True)
     title = CharField(null=True)
     userId = CharField(db_column='userId')
 
@@ -57,14 +56,15 @@ class Track(BaseModel):
 
 
 class Tracksinplaylist(BaseModel):
+    added_by = CharField(db_column='addedBy')
     dateAdded = DateTimeField(db_column='dateAdded')
-    dateRemoved = DateTimeField(db_column='dateRemoved', null=True)
+    dateRemoved = DateField(db_column='dateRemoved', null=True)
     playlistNumber = ForeignKeyField(db_column='playlistNumber', rel_model=Playlist, to_field='number')
     trackId = ForeignKeyField(db_column='trackId', rel_model=Track, to_field='trackId')
 
     class Meta:
         db_table = 'TracksInPlaylist'
-        primary_key = CompositeKey('dateAdded', 'playlistNumber', 'trackId')
+        primary_key = CompositeKey('added_by', 'dateAdded', 'playlistNumber', 'trackId')
 
 
 def _refresh_access_token(refresh_token):
@@ -84,12 +84,10 @@ def _refresh_access_token(refresh_token):
     return token_info
 
 
-def getAccessToken(id=LOCAL_USER):
+def get_access_token(id=LOCAL_USER):
     response = Oauth.get(Oauth.id == id)
     now = datetime.now() + relativedelta(minutes=10)
-    print("now: " + str(now))
     expires = response.expires;
-    print("expires " + str(expires))
     if now > expires:
         token_info = _refresh_access_token(response.refreshToken)
         response.accessToken = token_info['access_token']
@@ -98,19 +96,24 @@ def getAccessToken(id=LOCAL_USER):
     return response.accessToken
 
 
-def getRefreshToken(id=LOCAL_USER):
+def get_refresh_token(id=LOCAL_USER):
     return Oauth.get(Oauth.id == id).refreshToken
 
 
-def getPlaylistsUpdatedOlderThan(days):
-    return Playlist.select().where(Playlist.lastUpdated.between(datetime(year=2000,month=1,day=1),
+def get_playlists_updated_older_than(days):
+    return Playlist.select().where(Playlist.lastUpdated.between(datetime(year=2000, month=1, day=1),
                                                                 datetime.today() - relativedelta(days=days)))
 
 
-def getPlaylist(playlistId):
+def get_playlist(playlistId):
     return Playlist.get(Playlist.playlistId == playlistId)
 
 
-# ans = getPlaylistsUpdatedOlderThan(100)
-# for playlist in ans:
-#     pprint(vars(playlist))
+def get_current_tracks_in_playlist(playlist):
+    return Tracksinplaylist.select().where((Tracksinplaylist.playlistNumber == playlist) &
+                                           (Tracksinplaylist.dateRemoved >> None))
+
+def set_playlist_updated(playlist):
+    playlist.lastUpdated=datetime.now()
+    playlist.save()
+
