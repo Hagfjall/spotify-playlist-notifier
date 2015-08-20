@@ -67,6 +67,16 @@ class Tracksinplaylist(BaseModel):
         primary_key = CompositeKey('added_by', 'dateAdded', 'playlistNumber', 'trackId')
 
 
+class Subscriber(BaseModel):
+    email = CharField()
+    lastNotified = DateTimeField(db_column='lastNotified', null=True)
+    playlistNumber = ForeignKeyField(db_column='playlistNumber', rel_model=Playlist, to_field='number')
+
+    class Meta:
+        db_table = 'Subscriber'
+        primary_key = CompositeKey('email', 'playlistNumber')
+
+
 def _refresh_access_token(refresh_token):
     payload = {"refresh_token": refresh_token,
                "grant_type": "refresh_token"}
@@ -100,6 +110,10 @@ def get_refresh_token(id=LOCAL_USER):
     return Oauth.get(Oauth.id == id).refreshToken
 
 
+def get_unnotified_subscribers():
+    return Subscriber.select(Subscriber, Playlist).join(Playlist).where(Subscriber.lastNotified < Playlist.lastUpdated)
+
+
 def get_playlists_updated_older_than(days):
     return Playlist.select().where(Playlist.lastUpdated.between(datetime(year=2000, month=1, day=1),
                                                                 datetime.today() - relativedelta(days=days)))
@@ -109,11 +123,19 @@ def get_playlist(playlistId):
     return Playlist.get(Playlist.playlistId == playlistId)
 
 
-def get_current_tracks_in_playlist(playlist):
-    return Tracksinplaylist.select().where((Tracksinplaylist.playlistNumber == playlist) &
+def get_current_tracks_in_playlist(playlist_number):
+    return Tracksinplaylist.select().where((Tracksinplaylist.playlistNumber == playlist_number) &
                                            (Tracksinplaylist.dateRemoved >> None))
 
+
 def set_playlist_updated(playlist):
-    playlist.lastUpdated=datetime.now()
+    playlist.lastUpdated = datetime.now()
     playlist.save()
 
+
+def get_removed_or_added_tracks_in_playlist(playlistNumber, date):
+    # return Tracksinplaylist.select().where(Tracksinplaylist.dateRemoved > date.date())
+
+    return Tracksinplaylist.select().where(
+        (Tracksinplaylist.playlistNumber == playlistNumber) & ((Tracksinplaylist.dateAdded > date) |
+                                                               (Tracksinplaylist.dateRemoved > date.date())))
