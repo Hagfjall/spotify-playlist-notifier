@@ -47,6 +47,8 @@ class Playlist(BaseModel):
 
 
 class Track(BaseModel):
+    title = CharField()
+    artists = CharField()
     duration = IntegerField()
     popularity = IntegerField()
     trackId = CharField(db_column='trackId', primary_key=True)
@@ -113,6 +115,10 @@ def get_refresh_token(id=LOCAL_USER):
 def get_unnotified_subscribers():
     return Subscriber.select(Subscriber, Playlist).join(Playlist).where(Subscriber.lastNotified < Playlist.lastUpdated)
 
+def set_subscriber_notified(subscriber):
+    subscriber.lastNotified = datetime.now()
+    subscriber.save()
+    print("Subscriber updated!")
 
 def get_playlists_updated_older_than(days):
     return Playlist.select().where(Playlist.lastUpdated.between(datetime(year=2000, month=1, day=1),
@@ -130,7 +136,7 @@ def get_current_tracks_in_playlist(playlist_number):
 
 def set_playlist_updated(playlist):
     playlist.lastUpdated = datetime.now()
-    playlist.save()
+    # playlist.save()
 
 
 def get_removed_or_added_tracks_in_playlist(playlistNumber, date):
