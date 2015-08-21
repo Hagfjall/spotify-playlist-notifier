@@ -9,6 +9,7 @@ SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 
 sg = sendgrid.SendGridClient(SENDGRID_API_KEY, raise_errors=True)
 
+
 def _notify_users():
     subscribers = database.get_unnotified_subscribers()
     for subscriber in subscribers:
@@ -30,10 +31,11 @@ def _notify_users():
             body += s + "<br>"
         body += "Current tracks:<br>"
         for track in current_tracks:
-            body += track.trackId.trackId + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + str(track.trackId.duration) + "ms" + \
+            body += track.trackId.artists + " - " + track.trackId.title + "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + str(
+                track.trackId.duration) + "ms" + \
                     "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Popularity: " + str(track.trackId.popularity) + "<br>"
 
-        body +="</html>"
+        body += "</html>"
         message.set_html(body)
         try:
             status, msg = sg.send(message)
