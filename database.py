@@ -4,8 +4,8 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import base64
 import os
+from peewee import RawQuery
 import requests
-
 from peewee import *
 
 db = MySQLDatabase('spotifyCrawler', unix_socket="/var/run/mysqld/mysqld.sock", read_default_file="my.cnf")
@@ -36,6 +36,7 @@ class Oauth(BaseModel):
 
 class Playlist(BaseModel):
     lastUpdated = DateTimeField(db_column='lastUpdated', null=True)
+    lastChanged = DateTimeField(db_column='lastChanged')
     number = PrimaryKeyField()
     playlistId = CharField(db_column='playlistId')
     snapshotId = CharField(db_column='snapshotId', null=True)
@@ -115,10 +116,12 @@ def get_refresh_token(id=LOCAL_USER):
 def get_unnotified_subscribers():
     return Subscriber.select(Subscriber, Playlist).join(Playlist).where(Subscriber.lastNotified < Playlist.lastUpdated)
 
+
 def set_subscriber_notified(subscriber):
     subscriber.lastNotified = datetime.now()
     subscriber.save()
     print("Subscriber updated!")
+
 
 def get_playlists_updated_older_than(days):
     return Playlist.select().where(Playlist.lastUpdated.between(datetime(year=2000, month=1, day=1),
@@ -136,7 +139,17 @@ def get_current_tracks_in_playlist(playlist_number):
 
 def set_playlist_updated(playlist):
     playlist.lastUpdated = datetime.now()
+
     # playlist.save()
+
+
+def get_latest_change_date(playlist_number):
+    rq = RawQuery(Tracksinplaylist, "SELECT GREATEST(IFNULL(t.c1,0),IFNULL(t.c2,0)) dateAdded "
+                                    "FROM (SELECT MAX(dateAdded) c1, MAX(dateRemoved) c2 "
+                                    "FROM TracksInPlaylist WHERE playlistNumber=%s) AS t",
+                  playlist_number)
+    for obj in rq.execute():
+        return obj.dateAdded
 
 
 def get_removed_or_added_tracks_in_playlist(playlistNumber, date):
