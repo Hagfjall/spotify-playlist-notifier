@@ -133,14 +133,21 @@ def get_playlist(playlistId):
 
 
 def get_current_tracks_in_playlist(playlist_number):
-    return Tracksinplaylist.select().where((Tracksinplaylist.playlistNumber == playlist_number) &
-                                           (Tracksinplaylist.dateRemoved >> None))
+    return Tracksinplaylist.select().join(Track).where((Tracksinplaylist.playlistNumber == playlist_number) &
+                                                       (Tracksinplaylist.dateRemoved >> None))
 
 
 def set_playlist_updated(playlist):
     playlist.lastUpdated = datetime.now()
+    playlist.lastChanged = get_latest_change_date(playlist.number)
+    playlist.save()
 
-    # playlist.save()
+
+def set_track_in_playlist_removed(track_in_playlist):
+    print("Adding remove-date for " + track_in_playlist.trackId.trackId +
+          " " + str(track_in_playlist.dateAdded))
+    track_in_playlist.dateRemoved = datetime.now().date()
+    track_in_playlist.save()
 
 
 def get_latest_change_date(playlist_number):

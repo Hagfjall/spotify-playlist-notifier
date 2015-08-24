@@ -44,7 +44,6 @@ def _notify_users():
             print(status)
         except SendGridServerError:
             print(status)
-
         print(body)
 
 
