@@ -89,7 +89,7 @@ def _refresh_access_token(refresh_token):
     response = requests.post(OAUTH_TOKEN_URL, data=payload,
                              headers=headers)
     if response.status_code != 200:
-        print("warning: got errorcode " + response.status_code, file=sys.stderr)
+        print("warning: got errorcode " + response.status_code)
         return None
     token_info = response.json()
     if not "refresh_token" in token_info:
@@ -114,7 +114,7 @@ def get_refresh_token(id=LOCAL_USER):
 
 
 def get_unnotified_subscribers():
-    return Subscriber.select(Subscriber, Playlist).join(Playlist).where(Subscriber.lastNotified < Playlist.lastUpdated)
+    return Subscriber.select(Subscriber, Playlist).join(Playlist).where(Subscriber.lastNotified < Playlist.lastChanged)
 
 
 def set_subscriber_notified(subscriber):
@@ -160,8 +160,6 @@ def get_latest_change_date(playlist_number):
 
 
 def get_removed_or_added_tracks_in_playlist(playlistNumber, date):
-    # return Tracksinplaylist.select().where(Tracksinplaylist.dateRemoved > date.date())
-
     return Tracksinplaylist.select().where(
         (Tracksinplaylist.playlistNumber == playlistNumber) & ((Tracksinplaylist.dateAdded > date) |
                                                                (Tracksinplaylist.dateRemoved > date.date())))
