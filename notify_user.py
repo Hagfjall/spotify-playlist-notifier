@@ -27,7 +27,7 @@ def _notify_users():
                 s += "+ "
             else:
                 s += "- " + "removed: " + str(track.dateRemoved) + " "
-            s += track.trackId.trackId + " " + " added: " + str(track.dateAdded)
+            s += track.trackId.artists + " - " + track.trackId.title + " " + " added: " + str(track.dateAdded)
             body += s + "<br>"
         body += "Current tracks:<br>"
         for track in current_tracks:
