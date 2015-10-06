@@ -79,6 +79,7 @@ class Subscriber(BaseModel):
         db_table = 'Subscriber'
         primary_key = CompositeKey('email', 'playlistNumber')
 
+
 class SpotifyId(BaseModel):
     displayName = CharField(db_column='displayName')
     id = CharField(primary_key=True)
@@ -92,7 +93,6 @@ def _refresh_access_token(refresh_token):
                "grant_type": "refresh_token"}
     auth_header = base64.b64encode(client_id + ":" + client_secret)
     headers = {"Authorization": "Basic %s" % auth_header}
-
     response = requests.post(OAUTH_TOKEN_URL, data=payload,
                              headers=headers)
     if response.status_code != 200:
@@ -123,14 +123,17 @@ def get_refresh_token(id=LOCAL_USER):
 def get_unnotified_subscribers():
     return Subscriber.select(Subscriber, Playlist).join(Playlist).where(Subscriber.lastNotified < Playlist.lastChanged)
 
+
 def get_display_name(spotifyId):
     try:
         return SpotifyId.get(SpotifyId.id == spotifyId)
     except SpotifyId.DoesNotExist:
         return None
 
+
 def insert_display_name(spotifyId, display_name):
-    SpotifyId.create(id=spotifyId,displayName=display_name)
+    SpotifyId.create(id=spotifyId, displayName=display_name)
+
 
 def set_subscriber_notified(subscriber):
     subscriber.lastNotified = datetime.now()

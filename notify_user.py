@@ -10,7 +10,7 @@ SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 sg = sendgrid.SendGridClient(SENDGRID_API_KEY, raise_errors=True)
 
 
-def _notify_users():
+def notify_users():
     subscribers = database.get_unnotified_subscribers()
     for subscriber in subscribers:
         body = "<html>"
@@ -47,4 +47,4 @@ def _notify_users():
         print(body)
 
 
-_notify_users()
+# _notify_users()

@@ -1,13 +1,15 @@
 import datetime
 from peewee import OP
 from database import Track, Tracksinplaylist
+import sys
 
 OP['MOD'] = 'mod'
 __author__ = "Wycheproof"
 import database
+import notify_user
 import spotipy
 
-# sys.stdout = open('log.txt', 'w')
+sys.stdout = open('spotify_playlist_notifier.txt', 'w')
 token = database.get_access_token()
 sp = spotipy.Spotify(auth=token)
 
@@ -102,3 +104,4 @@ def update_playlist_info():
             database.set_track_in_playlist_removed(track)
 
 update_playlist_info()
+notify_user.notify_users()
